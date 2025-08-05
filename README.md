@@ -17,6 +17,30 @@ Set up a Django project named "Login System" with a virtual environment and a Dj
 
  Create views and define URL patterns for the "Login System" Django application to handle login functionality.
 
+In ```Loginify/urls.py```, 
+* we have used path and re_path to define URL patterns.
+* re_path is used to define URL patterns that contain variables like email in the URL.
+
+When to use path?
+* simple URL patterns (Basic string/integer parameters)
+* No special characters in parameters
+
+__Example__
+
+```python
+path('signup/', views.signup_view, name='signup'),
+```
+
+When to use re_path?
+* Complex parameters (like emails)
+* Need precise pattern matching
+* Special characters in URL parameters
+
+__Example__
+```python
+re_path(r'^user/(?P<email>[^/]+)/$', views.user_detail)
+```
+
 # Task 3 - CREATE MODELS FOR LOGIN SYSTEM
 
 Define models, implement views, and set up URLs and templates in Loginify.

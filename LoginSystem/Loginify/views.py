@@ -10,9 +10,8 @@ from .models import UserDetails
 # Create your views here.
 
 def hello_world(request):
-    """
-    A simple view that returns 'Hello, world!' for testing purposes
-    """
+    #A view that returns Hello, world!
+    
     return HttpResponse("Hello, world!")
 
 @csrf_exempt
@@ -106,10 +105,8 @@ def signup_view(request):
     return render(request, 'Loginify/signup.html')
 
 def login_view(request):
-    """
-    Login view: requires inputs for email and password.
-    Upon successful login, displays a success message.
-    """
+    #Login view: requires inputs for email and password.
+
     if request.method == 'POST':
         email = request.POST.get('email')
         password = request.POST.get('password')
@@ -131,7 +128,7 @@ def login_view(request):
     
     return render(request, 'Loginify/login.html')
 
-# =============== TASK 5: CRUD OPERATIONS - API ONLY ===============
+#TASK 5: CRUD OPs
 
 def get_all_users_view(request):
     """

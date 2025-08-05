@@ -6,7 +6,6 @@ urlpatterns = [
     path('signup/', views.signup_view, name='signup'),
     path('login/', views.login_view, name='login'),
     
-    # CRUD Operations - Task 5
     path('users/', views.get_all_users_view, name='all_users'),
     re_path(r'^user/(?P<email>[^/]+)/update/$', views.update_user_view, name='update_user'),
     re_path(r'^user/(?P<email>[^/]+)/delete/$', views.delete_user_view, name='delete_user'),

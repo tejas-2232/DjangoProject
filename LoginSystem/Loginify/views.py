@@ -16,13 +16,7 @@ def hello_world(request):
 
 @csrf_exempt
 def signup_view(request):
-    """
-    CRUD - CREATE: User registration
-    Handles user registration with inputs for username, email, and password.
-    Supports both web form and API (JSON) requests.
-    """
     if request.method == 'POST':
-        # Check if it's an API request (JSON) or web form
         is_api = request.content_type == 'application/json'
         
         if is_api:
@@ -38,12 +32,10 @@ def signup_view(request):
                     'message': 'Invalid JSON data'
                 }, status=400)
         else:
-            # Web form request
             username = request.POST.get('username')
             email = request.POST.get('email')
             password = request.POST.get('password')
         
-        # Validate required fields
         if not username or not email or not password:
             error_msg = 'All fields are required.'
             if is_api:
@@ -105,13 +97,12 @@ def signup_view(request):
     return render(request, 'Loginify/signup.html')
 
 def login_view(request):
-    #Login view: requires inputs for email and password.
+    #Login view - requires inputs for email and password.
 
     if request.method == 'POST':
         email = request.POST.get('email')
         password = request.POST.get('password')
         
-        # Validate required fields
         if not email or not password:
             messages.error(request, 'Both email and password are required.')
             return render(request, 'Loginify/login.html')
@@ -119,9 +110,11 @@ def login_view(request):
         try:
             # Check if user exists with provided email and password
             user = UserDetails.objects.get(email=email, password=password)
+
             # Successful login - display success message
             messages.success(request, f'Welcome back, {user.username}! Login successful.')
             return render(request, 'Loginify/success.html', {'user': user})
+        
         except UserDetails.DoesNotExist:
             messages.error(request, 'Invalid email or password. Please try again.')
             return render(request, 'Loginify/login.html')

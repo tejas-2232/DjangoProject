@@ -125,8 +125,7 @@ def login_view(request):
 
 def get_all_users_view(request):
     """
-    CRUD - READ: Get all user details
-    API endpoint to retrieve and return details of all users in JSON format
+    CRUD - READ: Get all user details - API endpoint
     """
     try:
         all_users = UserDetails.objects.all()
@@ -151,10 +150,7 @@ def get_all_users_view(request):
         }, status=500)
 
 def get_user_by_email_view(request, email):
-    """
-    CRUD - READ: Get single user by email
-    API endpoint to retrieve and return details of a specific user based on their email
-    """
+    #Get single user by email
     try:
         # Decode URL-encoded email (handles %40 -> @, etc.)
         decoded_email = unquote(email)
@@ -176,13 +172,10 @@ def get_user_by_email_view(request, email):
             'message': f'User with email {decoded_email} not found'
         }, status=404)
 
+#Update user details
 @csrf_exempt
 @require_http_methods(["GET", "POST", "PUT"])
 def update_user_view(request, email):
-    """
-    CRUD - UPDATE: Update user details
-    API endpoint to update/modify user information
-    """
     try:
         # Decode URL-encoded email (handles %40 -> @, etc.)
         decoded_email = unquote(email)
@@ -260,15 +253,12 @@ def update_user_view(request, email):
             'debug': str(type(e).__name__)
         }, status=500)
 
+# Delete user by email
 @csrf_exempt
 @require_http_methods(["DELETE", "POST"])
 def delete_user_view(request, email):
-    """
-    CRUD - DELETE: Delete user by email
-    API endpoint to remove a user account using their email
-    """
     try:
-        # Decode URL-encoded email (handles %40 -> @, etc.)
+        # Decode URL-encoded email (handles if %40 -> @, etc.)
         decoded_email = unquote(email)
         user = get_object_or_404(UserDetails, email=decoded_email)
         username = user.username  # Store for response message

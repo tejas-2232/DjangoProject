@@ -5,7 +5,12 @@ urlpatterns = [
     path('', views.hello_world, name='hello_world'),
     path('signup/', views.signup_view, name='signup'),
     path('login/', views.login_view, name='login'),
+    path('logout/', views.logout_view, name='logout'),
+    path('dashboard/', views.dashboard_view, name='dashboard'),
+    path('profile/', views.profile_view, name='profile'),
+    path('session-info/', views.session_info_view, name='session_info'),
     
+    # API endpoints for CRUD operations
     path('users/', views.get_all_users_view, name='all_users'),
     re_path(r'^user/(?P<email>[^/]+)/update/$', views.update_user_view, name='update_user'),
     re_path(r'^user/(?P<email>[^/]+)/delete/$', views.delete_user_view, name='delete_user'),

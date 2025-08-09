@@ -5,7 +5,31 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from urllib.parse import unquote
 import json
+from functools import wraps
 from .models import UserDetails
+
+# Session utility decorator
+def login_required_session(view_func):
+    """
+    Decorator that requires an active session for access
+    """
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if not request.session.get('user_id'):
+            messages.error(request, 'Please log in to access this page.')
+            return redirect('login')
+        
+        # Verify session user still exists
+        try:
+            UserDetails.objects.get(username=request.session['user_id'])
+        except UserDetails.DoesNotExist:
+            # Session user no longer exists, clear session
+            request.session.flush()
+            messages.error(request, 'Account no longer exists. Please log in again.')
+            return redirect('login')
+            
+        return view_func(request, *args, **kwargs)
+    return wrapper
 
 # Create your views here.
 
@@ -78,8 +102,14 @@ def signup_view(request):
                     }
                 }, status=201)
             else:
-                messages.success(request, 'Account created successfully! Please login.')
-                return redirect('login')  # Redirect to login page upon successful signup
+                # Auto-login after successful signup (create session)
+                request.session['user_id'] = user.username
+                request.session['user_email'] = user.email
+                request.session['is_logged_in'] = True
+                request.session.set_expiry(86400)  # 24 hours
+                
+                messages.success(request, f'Account created successfully! Welcome, {user.username}!')
+                return render(request, 'Loginify/success.html', {'user': user})
                 
         except Exception as e:
             error_msg = 'An error occurred during signup. Please try again.'
@@ -98,6 +128,12 @@ def signup_view(request):
 
 def login_view(request):
     #Login view - requires inputs for email and password.
+    # Check if user is already logged in
+    if request.session.get('user_id'):
+        # User is already logged in, redirect to dashboard/success page
+        user = UserDetails.objects.get(username=request.session['user_id'])
+        messages.info(request, f'You are already logged in as {user.username}.')
+        return render(request, 'Loginify/success.html', {'user': user})
 
     if request.method == 'POST':
         email = request.POST.get('email')
@@ -111,7 +147,14 @@ def login_view(request):
             # Check if user exists with provided email and password
             user = UserDetails.objects.get(email=email, password=password)
 
-            # Successful login - display success message
+            # Successful login - create session
+            request.session['user_id'] = user.username
+            request.session['user_email'] = user.email
+            request.session['is_logged_in'] = True
+            
+            # Set session expiry (optional - 24 hours)
+            request.session.set_expiry(86400)  # 24 hours in seconds
+            
             messages.success(request, f'Welcome back, {user.username}! Login successful.')
             return render(request, 'Loginify/success.html', {'user': user})
         
@@ -121,12 +164,87 @@ def login_view(request):
     
     return render(request, 'Loginify/login.html')
 
+def logout_view(request):
+    """
+    Logout view - clears session data and logs out the user
+    """
+    if request.session.get('user_id'):
+        username = request.session.get('user_id')
+        # Clear all session data
+        request.session.flush()  # This clears all session data and deletes the session cookie
+        messages.success(request, f'You have been successfully logged out, {username}!')
+    else:
+        messages.info(request, 'You were not logged in.')
+    
+    return redirect('login')
+
+@login_required_session
+def dashboard_view(request):
+    """
+    Dashboard view - only accessible to logged-in users
+    """
+    # Get user from session (decorator ensures user exists)
+    user = UserDetails.objects.get(username=request.session['user_id'])
+    return render(request, 'Loginify/dashboard.html', {'user': user})
+
+@login_required_session
+def profile_view(request):
+    """
+    Profile view - shows user profile for logged-in users
+    """
+    # Get user from session (decorator ensures user exists)
+    user = UserDetails.objects.get(username=request.session['user_id'])
+    
+    # Check for session data consistency
+    if user.email != request.session.get('user_email'):
+        # Session data is inconsistent, refresh it
+        request.session['user_email'] = user.email
+    
+    context = {
+        'user': user,
+        'session_info': {
+            'session_key': request.session.session_key,
+            'expiry_date': request.session.get_expiry_date(),
+            'logged_in_since': request.session.get('user_id')
+        }
+    }
+    return render(request, 'Loginify/profile.html', context)
+
+def session_info_view(request):
+    """
+    Session information view - shows current session details for testing
+    """
+    session_data = {
+        'session_key': request.session.session_key,
+        'is_logged_in': request.session.get('is_logged_in', False),
+        'user_id': request.session.get('user_id'),
+        'user_email': request.session.get('user_email'),
+        'session_exists': bool(request.session.session_key),
+        'expiry_date': request.session.get_expiry_date() if request.session.session_key else None,
+        'all_session_keys': list(request.session.keys())
+    }
+    
+    return JsonResponse({
+        'status': 'success',
+        'session_info': session_data,
+        'message': 'Session information retrieved successfully'
+    })
+
 #TASK 5: CRUD OPs
 
 def get_all_users_view(request):
     """
     CRUD - READ: Get all user details - API endpoint
+    Note: This endpoint requires an active session for security
     """
+    # Check if user is logged in via session (for web interface protection)
+    if not request.session.get('user_id') and request.content_type != 'application/json':
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Session required for web access. Please login first.',
+            'redirect': '/login/'
+        }, status=401)
+    
     try:
         all_users = UserDetails.objects.all()
         users_data = [
@@ -137,11 +255,18 @@ def get_all_users_view(request):
             }
             for user in all_users
         ]
-        return JsonResponse({
+        
+        response_data = {
             'status': 'success',
             'count': len(users_data),
             'users': users_data
-        })
+        }
+        
+        # Add session info if user is logged in via web interface
+        if request.session.get('user_id'):
+            response_data['session_user'] = request.session.get('user_id')
+            
+        return JsonResponse(response_data)
     
     except Exception as e:
         return JsonResponse({

@@ -120,8 +120,13 @@
         {% endif %}
         
         <div class="navigation-links">
-            <a href="{% url 'signup' %}" class="nav-button">Create Another Account</a>
-            <a href="{% url 'login' %}" class="nav-button logout-button">Login Again</a>
+            <a href="{% url 'dashboard' %}" class="nav-button">Go to Dashboard</a>
+            <a href="{% url 'profile' %}" class="nav-button">View Profile</a>
+            <a href="{% url 'logout' %}" class="nav-button logout-button">Logout</a>
+        </div>
+        
+        <div class="navigation-links" style="margin-top: 15px;">
+            <a href="{% url 'signup' %}" class="nav-button" style="background-color: #6c757d;">Create Another Account</a>
         </div>
     </div>
 </body>

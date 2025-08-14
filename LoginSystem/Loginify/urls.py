@@ -9,6 +9,8 @@ urlpatterns = [
     path('dashboard/', views.dashboard_view, name='dashboard'),
     path('profile/', views.profile_view, name='profile'),
     path('session-info/', views.session_info_view, name='session_info'),
+    path('upload-profile-picture/', views.upload_profile_picture, name='upload_profile_picture'),
+    path('remove-profile-picture/', views.remove_profile_picture, name='remove_profile_picture'),
     
     # API endpoints for CRUD operations
     path('users/', views.get_all_users_view, name='all_users'),

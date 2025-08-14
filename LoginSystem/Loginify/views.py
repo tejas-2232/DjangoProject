@@ -5,8 +5,36 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from urllib.parse import unquote
 import json
+import os
 from functools import wraps
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
 from .models import UserDetails
+
+# File validation utility
+def validate_image_file(file):
+    """
+    Validate uploaded image file
+    """
+    # Check file size (max 5MB)
+    max_size = 5 * 1024 * 1024  # 5MB
+    if file.size > max_size:
+        return False, "File size too large. Maximum size is 5MB."
+    
+    # Check file extension
+    allowed_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp']
+    ext = os.path.splitext(file.name)[1].lower()
+    if ext not in allowed_extensions:
+        return False, f"Invalid file type. Allowed types: {', '.join(allowed_extensions)}"
+    
+    # Check if file is actually an image
+    try:
+        from PIL import Image
+        image = Image.open(file)
+        image.verify()
+        return True, "Valid image file"
+    except Exception as e:
+        return False, "Invalid image file or corrupted file."
 
 # Session utility decorator
 def login_required_session(view_func):
@@ -229,6 +257,84 @@ def session_info_view(request):
         'session_info': session_data,
         'message': 'Session information retrieved successfully'
     })
+
+@login_required_session
+@csrf_exempt
+def upload_profile_picture(request):
+    """
+    Handle profile picture upload and update
+    """
+    if request.method == 'POST':
+        # Get current user
+        user = UserDetails.objects.get(username=request.session['user_id'])
+        
+        # Check if file was uploaded
+        if 'profile_picture' not in request.FILES:
+            messages.error(request, 'No file selected for upload.')
+            return redirect('profile')
+        
+        uploaded_file = request.FILES['profile_picture']
+        
+        # Validate the uploaded file
+        is_valid, error_message = validate_image_file(uploaded_file)
+        if not is_valid:
+            messages.error(request, error_message)
+            return redirect('profile')
+        
+        try:
+            # Delete old profile picture if exists
+            if user.profile_picture:
+                user.delete_old_profile_picture()
+            
+            # Save new profile picture
+            user.profile_picture = uploaded_file
+            user.save()
+            
+            messages.success(request, 'Profile picture updated successfully!')
+            
+            # Return JSON response for AJAX requests
+            if request.content_type == 'application/json' or request.GET.get('format') == 'json':
+                return JsonResponse({
+                    'status': 'success',
+                    'message': 'Profile picture updated successfully',
+                    'profile_picture_url': user.get_profile_picture_url()
+                })
+            
+        except Exception as e:
+            error_msg = 'An error occurred while uploading the profile picture.'
+            messages.error(request, error_msg)
+            
+            if request.content_type == 'application/json' or request.GET.get('format') == 'json':
+                return JsonResponse({
+                    'status': 'error',
+                    'message': error_msg
+                }, status=500)
+    
+    return redirect('profile')
+
+@login_required_session
+def remove_profile_picture(request):
+    """
+    Remove user's profile picture
+    """
+    if request.method == 'POST':
+        user = UserDetails.objects.get(username=request.session['user_id'])
+        
+        try:
+            if user.profile_picture:
+                # Delete the file
+                user.delete_old_profile_picture()
+                # Clear the field
+                user.profile_picture = None
+                user.save()
+                messages.success(request, 'Profile picture removed successfully!')
+            else:
+                messages.info(request, 'No profile picture to remove.')
+                
+        except Exception as e:
+            messages.error(request, 'An error occurred while removing the profile picture.')
+    
+    return redirect('profile')
 
 #TASK 5: CRUD OPs
 

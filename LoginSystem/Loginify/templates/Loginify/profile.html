@@ -28,10 +28,69 @@
             color: #333;
             margin: 0 0 10px 0;
         }
+        .profile-picture-container {
+            position: relative;
+            margin-bottom: 15px;
+        }
+        .profile-picture {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid #007bff;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
         .profile-icon {
             font-size: 60px;
             color: #007bff;
             margin-bottom: 15px;
+        }
+        .upload-section {
+            background-color: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .upload-section:hover {
+            border-color: #007bff;
+            background-color: #e3f2fd;
+        }
+        .file-input {
+            margin: 15px 0;
+        }
+        .file-input input[type="file"] {
+            margin: 10px 0;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 100%;
+        }
+        .upload-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 15px;
+        }
+        .upload-btn {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .upload-btn:hover {
+            background-color: #218838;
+        }
+        .remove-btn {
+            background-color: #dc3545;
+        }
+        .remove-btn:hover {
+            background-color: #c82333;
         }
         .profile-section {
             margin-bottom: 30px;
@@ -141,7 +200,13 @@
 <body>
     <div class="profile-container">
         <div class="header">
-            <div class="profile-icon">👤</div>
+            <div class="profile-picture-container">
+                {% if user.profile_picture %}
+                    <img src="{{ user.profile_picture.url }}" alt="Profile Picture" class="profile-picture">
+                {% else %}
+                    <div class="profile-icon">👤</div>
+                {% endif %}
+            </div>
             <h1>User Profile</h1>
             <span class="status-badge">Session Active</span>
         </div>
@@ -170,6 +235,50 @@
                 <div class="info-value">
                     <span class="status-badge">Active</span>
                 </div>
+            </div>
+        </div>
+        
+        <div class="profile-section">
+            <h2>Profile Picture</h2>
+            
+            <div class="upload-section">
+                <h3>📸 Update Profile Picture</h3>
+                <p>Upload a new profile picture or remove the current one</p>
+                
+                <form method="post" action="{% url 'upload_profile_picture' %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="file-input">
+                        <label for="profile_picture">Choose Image File:</label>
+                        <input type="file" id="profile_picture" name="profile_picture" 
+                               accept="image/*" required>
+                        <small style="color: #6c757d; display: block; margin-top: 5px;">
+                            Supported formats: JPG, PNG, GIF, BMP (Max size: 5MB)
+                        </small>
+                    </div>
+                    
+                    <div class="upload-buttons">
+                        <button type="submit" class="upload-btn">
+                            📤 Upload Picture
+                        </button>
+                        
+                        {% if user.profile_picture %}
+                        <button type="button" class="upload-btn remove-btn"
+                                onclick="removeProfilePicture()">
+                            🗑️ Remove Picture
+                        </button>
+                        {% endif %}
+                    </div>
+                </form>
+                
+                {% if user.profile_picture %}
+                <div style="margin-top: 15px; padding: 10px; background-color: #d4edda; border: 1px solid #c3e6cb; border-radius: 5px; color: #155724;">
+                    <strong>✓ Current Picture:</strong> {{ user.profile_picture.name|truncatechars:30 }}
+                </div>
+                {% else %}
+                <div style="margin-top: 15px; padding: 10px; background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 5px; color: #856404;">
+                    <strong>ℹ️ No Picture:</strong> Using default avatar
+                </div>
+                {% endif %}
             </div>
         </div>
         
@@ -217,5 +326,31 @@
             <a href="{% url 'logout' %}" class="nav-button danger">Logout</a>
         </div>
     </div>
+
+    <!-- Hidden form for removing profile picture -->
+    <form id="removeForm" method="post" action="{% url 'remove_profile_picture' %}" style="display: none;">
+        {% csrf_token %}
+    </form>
+
+    <script>
+        function removeProfilePicture() {
+            if (confirm('Are you sure you want to remove your profile picture?')) {
+                document.getElementById('removeForm').submit();
+            }
+        }
+
+        // Preview uploaded image before submission
+        document.getElementById('profile_picture').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    // You could add image preview functionality here
+                    console.log('Image selected:', file.name);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    </script>
 </body>
 </html>

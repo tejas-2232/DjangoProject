@@ -36,6 +36,28 @@
             padding: 8px 15px;
             border-radius: 20px;
             font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .header-profile-picture {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid white;
+        }
+        .profile-placeholder {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #007bff;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            border: 2px solid white;
         }
         .dashboard-cards {
             display: grid;
@@ -147,8 +169,15 @@
         <div class="header">
             <h1>Dashboard</h1>
             <div class="user-badge">
-                <span class="status-indicator"></span>
-                Logged in as {{ user.username }}
+                {% if user.profile_picture %}
+                    <img src="{{ user.profile_picture.url }}" alt="Profile" class="header-profile-picture">
+                {% else %}
+                    <div class="profile-placeholder">{{ user.username|first|upper }}</div>
+                {% endif %}
+                <span>
+                    <span class="status-indicator"></span>
+                    Logged in as {{ user.username }}
+                </span>
             </div>
         </div>
         

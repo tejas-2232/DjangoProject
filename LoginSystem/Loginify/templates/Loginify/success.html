@@ -38,6 +38,14 @@
             color: #495057;
             margin-bottom: 15px;
         }
+        .success-profile-picture {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #28a745;
+            margin-bottom: 15px;
+        }
         .info-item {
             margin-bottom: 10px;
             font-size: 16px;
@@ -110,6 +118,13 @@
         {% if user %}
         <div class="user-info">
             <h3>Your Account Information</h3>
+            
+            {% if user.profile_picture %}
+                <div style="text-align: center;">
+                    <img src="{{ user.profile_picture.url }}" alt="Profile Picture" class="success-profile-picture">
+                </div>
+            {% endif %}
+            
             <div class="info-item">
                 <span class="info-label">Username:</span> {{ user.username }}
             </div>

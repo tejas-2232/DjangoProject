@@ -1,5 +1,7 @@
 DjangoAssignment/
 db.sqlite3
+LoginSystem/media/
+LoginSystem/__pycache__/
 Loginify/__pycache__/
 __pycache__/
 *.pyc
